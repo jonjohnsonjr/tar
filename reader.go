@@ -6,7 +6,9 @@ package tar
 
 import (
 	"bytes"
+	"errors"
 	"io"
+	"iter"
 	"strconv"
 	"strings"
 	"time"
@@ -870,4 +872,21 @@ func discard(r io.Reader, n int64) error {
 		err = io.ErrUnexpectedEOF
 	}
 	return err
+}
+
+func (tr *Reader) Files() iter.Seq2[*Header, error] {
+	return func(yield func(*Header, error) bool) {
+		for {
+			hdr, err := tr.Next()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					return
+				}
+			}
+
+			if !yield(hdr, err) {
+				return
+			}
+		}
+	}
 }
